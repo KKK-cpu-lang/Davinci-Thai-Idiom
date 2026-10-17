@@ -21,6 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
     userSlots: [] // เก็บค่าที่ผู้เล่นเลือกใส่ในแต่ละช่อง (โหมดคลังพยางค์)
   };
 
+  // Cache Buster ป้องกันปัญหาเบราว์เซอร์จำรูปภาพเก่า
+  const ASSET_CACHE_KEY = "v=20261017_2";
+  function withCacheBuster(url) {
+    if (!url) return "";
+    return url.includes("?") ? `${url}&${ASSET_CACHE_KEY}` : `${url}?${ASSET_CACHE_KEY}`;
+  }
+
   // ==========================================
   // DOM Elements
   // ==========================================
@@ -316,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
       nextStage.images.forEach(src => {
         const preImg = new Image();
         preImg.decoding = "async";
-        preImg.src = src;
+        preImg.src = withCacheBuster(src);
       });
     }
   }
@@ -341,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const img = document.createElement("img");
       img.className = "puzzle-img";
-      img.src = imgSrc;
+      img.src = withCacheBuster(imgSrc);
       img.alt = `ภาพปริศนาที่ ${imgIndex + 1}`;
       img.decoding = "async";
       img.loading = "eager";
@@ -837,7 +844,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const img = document.createElement("img");
       img.className = "exp-thumb-img";
-      img.src = imgSrc;
+      img.src = withCacheBuster(imgSrc);
       img.decoding = "async";
       img.loading = "lazy";
       img.alt = `ภาพที่ ${idx + 1}`;
