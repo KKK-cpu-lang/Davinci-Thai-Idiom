@@ -1,0 +1,7 @@
+.agents/
+skills-lock.json
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.log

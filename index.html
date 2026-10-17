@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกม Davinci ถอดรหัสสำนวนไทย (Idiom DaVinci Decoder) | สำหรับนักเรียน ป.5</title>
+  <meta name="description" content="เกมการศึกษาออนไลน์ Davinci ถอดรหัสสำนวนไทย สำหรับนักเรียนชั้นประถมศึกษาปีที่ 5 สนุกกับการทายสำนวนจากภาพปริศนา พร้อมเรียนรู้ความหมายและที่มา">
+  
+  <!-- Google Fonts: Mali (หัวข้อและปุ่ม) + Sarabun (เนื้อหาและคำใบ้) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:ital,wght@0,400;0,600;0,700;1,400&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Canvas สำหรับเอฟเฟกต์พลุ/กระดาษโปรย (Confetti) -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- แถบควบคุมบนสุด (Top Floating Controls) -->
+  <div class="top-bar-controls">
+    <button id="btn-toggle-sound" class="btn-circle-control" aria-label="เปิด/ปิดเสียง" title="เปิด/ปิดเสียง">
+      <span id="sound-icon">🔊</span>
+    </button>
+  </div>
+
+  <div class="game-wrapper">
+    <!-- ============================================== -->
+    <!-- หน้าที่ 1: หน้าเริ่มต้น (Start Screen) -->
+    <!-- ============================================== -->
+    <section id="start-screen" class="screen-view active">
+      <div class="hero-card">
+        <div class="logo-container">
+          <div class="mascot-badge">🎨 🔍 💡</div>
+          <h1 class="game-title">Davinci ถอดรหัสสำนวน</h1>
+          <p class="game-subtitle">Idiom DaVinci Decoder • ตะลุยด่านสำนวนไทย ชั้น ป.5</p>
+        </div>
+
+        <div class="card-content">
+          <!-- กรอกชื่อผู้เล่น -->
+          <div class="form-group">
+            <label for="player-name-input" class="form-label">
+              <span class="label-icon">👤</span> ใส่ชื่อยอดนักถอดรหัส:
+            </label>
+            <input 
+              type="text" 
+              id="player-name-input" 
+              class="custom-input" 
+              placeholder="เช่น น้องขวัญข้าว, กัปตันโบ๊ท" 
+              maxlength="20"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- เลือกโหมดการเล่น -->
+          <div class="form-group">
+            <label class="form-label">
+              <span class="label-icon">🎮</span> เลือกโหมดการเล่น:
+            </label>
+            <div class="mode-selector-grid">
+              <label class="mode-card selected" id="mode-card-pool">
+                <input type="radio" name="game-mode" value="pool" checked>
+                <div class="mode-icon">🧩</div>
+                <div class="mode-info">
+                  <span class="mode-name">โหมดคลังพยางค์</span>
+                  <span class="mode-desc">กดเรียงพยางค์คำตอบ (เหมาะสำหรับ ป.5)</span>
+                </div>
+                <div class="check-badge">✓</div>
+              </label>
+
+              <label class="mode-card" id="mode-card-typing">
+                <input type="radio" name="game-mode" value="typing">
+                <div class="mode-icon">⌨️</div>
+                <div class="mode-info">
+                  <span class="mode-name">โหมดพิมพ์ตอบเอง</span>
+                  <span class="mode-desc">พิมพ์สำนวนด้วยตนเอง (ท้าทายความจำ)</span>
+                </div>
+                <div class="check-badge">✓</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- ปุ่มควบคุมหน้าเริ่มต้น -->
+          <div class="action-buttons-group">
+            <button id="btn-start-game" class="btn btn-primary btn-bounce">
+              <span class="btn-icon">🚀</span> เริ่มเล่นเกมเลย!
+            </button>
+            <div class="sub-buttons">
+              <button id="btn-open-rules" class="btn btn-secondary">
+                <span class="btn-icon">📖</span> วิธีการเล่น
+              </button>
+              <button id="btn-open-leaderboard" class="btn btn-secondary">
+                <span class="btn-icon">🏆</span> กระดานคะแนน
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- หน้าที่ 2: หน้าเล่นเกม (Game Screen) -->
+    <!-- ============================================== -->
+    <section id="game-screen" class="screen-view">
+      <header class="game-hud">
+        <div class="hud-item hud-stage">
+          <span class="hud-label">ด่านที่</span>
+          <span class="hud-val" id="hud-stage-num">1 / 10</span>
+        </div>
+        <div class="hud-item hud-category" id="hud-category-badge">
+          สำนวนไทยเกี่ยวกับสัตว์
+        </div>
+        <div class="hud-item hud-score">
+          <span class="hud-label">คะแนน</span>
+          <span class="hud-val" id="hud-score-val">0</span>
+        </div>
+      </header>
+
+      <!-- แถบเวลานับถอยหลัง -->
+      <div class="timer-section">
+        <div class="timer-meta">
+          <span class="timer-title">⏱️ เวลาที่เหลือ:</span>
+          <span class="timer-countdown" id="timer-text">60 วิ</span>
+        </div>
+        <div class="timer-bar-container">
+          <div class="timer-bar-fill" id="timer-bar"></div>
+        </div>
+      </div>
+
+      <!-- กระดานรูปภาพปริศนา DaVinci -->
+      <main class="puzzle-board">
+        <div class="puzzle-header">
+          <span class="badge-syllables" id="badge-syllable-count">
+            <span class="pulse-dot"></span> จำนวน 8 พยางค์
+          </span>
+          <button id="btn-request-hint" class="btn-hint" title="ขอคำใบ้ความหมาย แต่จะถูกหักคะแนน 50%">
+            <span class="hint-icon">💡</span> ขอคำใบ้ (-50% คะแนน)
+          </button>
+        </div>
+
+        <!-- กล่องแสดงคำใบ้ (ซ่อนอยู่ตอนแรก) -->
+        <div id="hint-box" class="hint-container hidden">
+          <div class="hint-content">
+            <span class="hint-prefix">💡 คำใบ้:</span>
+            <span id="hint-text" class="hint-text">...</span>
+          </div>
+        </div>
+
+        <!-- กรอบรูปภาพเรียงต่อกัน คั่นด้วยเครื่องหมาย + -->
+        <div class="puzzle-gallery" id="puzzle-gallery">
+          <!-- จะถูกเรนเดอร์โดย JavaScript -->
+        </div>
+      </main>
+
+      <!-- ส่วนตอบคำถาม -->
+      <footer class="answer-section">
+        <!-- โหมด 1: คลังพยางค์ (Slot + Syllable Pool) -->
+        <div id="answer-mode-pool" class="answer-mode-container">
+          <div class="slots-label">ช่องคำตอบของคุณ (คลิกที่ช่องเพื่อเอาคำออก):</div>
+          <div class="answer-slots" id="answer-slots">
+            <!-- ช่องคำตอบจะถูกเรนเดอร์ตามจำนวนคำตอบ -->
+          </div>
+
+          <div class="pool-divider">คลังพยางค์ (คลิกเพื่อนำไปใส่ในช่อง):</div>
+          <div class="syllable-pool" id="syllable-pool">
+            <!-- ปุ่มพยางค์จะถูกเรนเดอร์ที่นี่ -->
+          </div>
+        </div>
+
+        <!-- โหมด 2: พิมพ์ตอบเอง (Text Input) -->
+        <div id="answer-mode-typing" class="answer-mode-container hidden">
+          <div class="typing-input-wrapper">
+            <label for="typing-answer-input" class="typing-label">พิมพ์สำนวนไทยที่ถูกต้องให้ตรงกับภาพ:</label>
+            <input 
+              type="text" 
+              id="typing-answer-input" 
+              class="typing-input" 
+              placeholder="พิมพ์คำตอบที่นี่..." 
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <!-- ปุ่มควบคุมการตรวจคำตอบ -->
+        <div class="answer-actions">
+          <button id="btn-clear-answer" class="btn btn-action-clear">
+            <span class="btn-icon">🧹</span> ล้างคำตอบ
+          </button>
+          <button id="btn-submit-answer" class="btn btn-action-submit btn-bounce">
+            <span class="btn-icon">✅</span> ตรวจคำตอบ
+          </button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- หน้าที่ 3: หน้าสรุปผลการเล่น (End Screen) -->
+    <!-- ============================================== -->
+    <section id="end-screen" class="screen-view">
+      <div class="summary-card">
+        <div class="summary-header">
+          <div class="trophy-animation">🏆</div>
+          <h2 class="summary-title">สรุปผลการถอดรหัส!</h2>
+          <p class="summary-player" id="summary-player-name">ผู้เล่น: น้องขวัญข้าว</p>
+        </div>
+
+        <!-- การ์ดคะแนนหลัก -->
+        <div class="score-showcase">
+          <div class="score-box">
+            <span class="score-label">คะแนนรวมที่ทำได้</span>
+            <span class="score-number" id="summary-final-score">0</span>
+            <span class="score-max">เต็ม 1,000 คะแนน</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-badge">
+              <span class="stat-icon">🎯</span>
+              <span class="stat-text" id="summary-correct-count">ตอบถูก 10 / 10 ด่าน</span>
+            </div>
+            <div class="stat-badge">
+              <span class="stat-icon">🎮</span>
+              <span class="stat-text" id="summary-mode-name">โหมดคลังพยางค์</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ฉายาที่ได้รับ -->
+        <div class="rank-card">
+          <div class="rank-ribbon">ฉายาที่คุณได้รับ</div>
+          <h3 class="rank-title" id="summary-rank-title">ปราชญ์ภาษาไทยขั้นเทพ 🏆</h3>
+          <p class="rank-desc" id="summary-rank-desc">ยอดเยี่ยมมาก! มีความรู้ความเข้าใจสำนวนไทยอย่างลึกซึ้ง</p>
+        </div>
+
+        <!-- ตาราง 5 อันดับคะแนนสูงสุด -->
+        <div class="leaderboard-preview">
+          <h4 class="table-title">🏅 5 อันดับยอดฝีมือล่าสุด</h4>
+          <div class="table-responsive">
+            <table class="custom-table" id="summary-leaderboard-table">
+              <thead>
+                <tr>
+                  <th>อันดับ</th>
+                  <th>ชื่อผู้เล่น</th>
+                  <th>โหมด</th>
+                  <th>คะแนน</th>
+                </tr>
+              </thead>
+              <tbody id="summary-leaderboard-body">
+                <!-- ข้อมูลจาก localStorage -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ปุ่มเล่นอีกครั้ง / กลับหน้าแรก -->
+        <div class="summary-actions">
+          <button id="btn-replay-game" class="btn btn-primary btn-bounce">
+            <span class="btn-icon">🔄</span> เล่นอีกครั้ง
+          </button>
+          <button id="btn-home-game" class="btn btn-secondary">
+            <span class="btn-icon">🏠</span> กลับหน้าแรก
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 1: เฉลยความรู้หลังจบแต่ละด่าน -->
+  <!-- ============================================== -->
+  <div id="modal-explanation" class="modal-backdrop hidden">
+    <div class="modal-dialog bounce-in">
+      <div class="modal-header-banner" id="exp-banner-header">
+        <span class="banner-icon" id="exp-banner-icon">🎉</span>
+        <h3 class="banner-title" id="exp-banner-title">ถูกต้องเก่งมาก!</h3>
+        <span class="earned-points-badge" id="exp-banner-points">+100 คะแนน</span>
+      </div>
+
+      <div class="modal-body-content">
+        <!-- ภาพตัวอย่างปริศนาพร้อมเฉลยย่อย -->
+        <div class="exp-puzzle-preview" id="exp-puzzle-preview">
+          <!-- เรนเดอร์รูปภาพย่อพร้อมคำเฉลยแต่ละภาพ -->
+        </div>
+
+        <!-- สำนวนที่ถูกต้อง -->
+        <div class="exp-answer-showcase">
+          <span class="exp-answer-label">สำนวนที่ถูกต้องคือ:</span>
+          <h2 class="exp-answer-text" id="exp-full-answer">รักวัวให้ผูก รักลูกให้ตี</h2>
+        </div>
+
+        <!-- ความหมายของสำนวน -->
+        <div class="exp-card meaning-card">
+          <div class="exp-card-header">
+            <span class="exp-card-icon">📖</span> ความหมายของสำนวน
+          </div>
+          <p class="exp-card-text" id="exp-meaning-text">...</p>
+        </div>
+
+        <!-- ที่มาและข้อคิด -->
+        <div class="exp-card origin-card">
+          <div class="exp-card-header">
+            <span class="exp-card-icon">💡</span> ที่มาและข้อคิดสอนใจ
+          </div>
+          <p class="exp-card-text" id="exp-origin-text">...</p>
+        </div>
+      </div>
+
+      <div class="modal-footer-actions">
+        <button id="btn-next-stage" class="btn btn-primary btn-next-stage btn-bounce">
+          <span id="btn-next-text">ไปด่านต่อไป</span> <span class="btn-icon">➜</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 2: กติกาและวิธีการเล่น -->
+  <!-- ============================================== -->
+  <div id="modal-how-to-play" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📖 วิธีการเล่นและกติกา</h3>
+        <button class="modal-close-btn" id="btn-close-rules" aria-label="ปิด">&times;</button>
+      </div>
+      <div class="modal-body-content rules-list">
+        <div class="rule-item">
+          <span class="rule-badge">1</span>
+          <div>
+            <strong>สังเกตรูปภาพปริศนา:</strong> แต่ละด่านจะมีภาพปริศนา 3-4 รูป นำความหมายของแต่ละรูปมารวมกันเป็นสำนวนไทย
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-badge">2</span>
+          <div>
+            <strong>เลือกตอบตามโหมด:</strong>
+            <ul>
+              <li><strong>โหมดคลังพยางค์:</strong> คลิกปุ่มพยางค์ด้านล่างเพื่อส่งขึ้นไปเรียงในช่องคำตอบ</li>
+              <li><strong>โหมดพิมพ์ตอบเอง:</strong> พิมพ์สำนวนไทยลงในช่องข้อความด้วยตนเอง</li>
+            </ul>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-badge">3</span>
+          <div>
+            <strong>เวลาและคะแนน:</strong> แต่ละด่านมีเวลา <strong>60 วินาที</strong> ตอบถูกได้รับ <strong>100 คะแนน</strong>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-badge">4</span>
+          <div>
+            <strong>ตัวช่วยคำใบ้:</strong> หากคิดไม่ออก กดปุ่ม "ขอคำใบ้" ได้ แต่คะแนนในด่านนั้นจะลดเหลือ <strong>50 คะแนน</strong>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-badge">5</span>
+          <div>
+            <strong>สะสมฉายา:</strong> เล่นให้ครบทั้ง 10 ด่านเพื่อคว้าฉายา "ปราชญ์ภาษาไทยขั้นเทพ" และบันทึกคะแนนลงตารางเกียรติยศ!
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-actions">
+        <button class="btn btn-primary" id="btn-close-rules-confirm">เข้าใจแล้ว พร้อมลุย!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 3: ตารางคะแนนรวม (Leaderboard) -->
+  <!-- ============================================== -->
+  <div id="modal-leaderboard" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🏆 ทำเนียบยอดนักถอดรหัส</h3>
+        <button class="modal-close-btn" id="btn-close-leaderboard" aria-label="ปิด">&times;</button>
+      </div>
+      <div class="modal-body-content">
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>อันดับ</th>
+                <th>ชื่อผู้เล่น</th>
+                <th>โหมด</th>
+                <th>คะแนน</th>
+                <th>วันที่</th>
+              </tr>
+            </thead>
+            <tbody id="global-leaderboard-body">
+              <!-- ข้อมูลเรนเดอร์จาก JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer-actions">
+        <button class="btn btn-secondary" id="btn-clear-leaderboard">ล้างประวัติคะแนน</button>
+        <button class="btn btn-primary" id="btn-close-leaderboard-confirm">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 4: แจ้งเตือนเมื่อตอบผิด (Wrong Answer Modal) -->
+  <!-- ============================================== -->
+  <div id="modal-wrong-answer" class="modal-backdrop hidden">
+    <div class="modal-dialog bounce-in">
+      <div class="modal-header-banner wrong" id="wrong-banner-header">
+        <span class="banner-icon" id="wrong-banner-icon">💡</span>
+        <h3 class="banner-title" id="wrong-banner-title">เกือบถูกแล้วจ้า!</h3>
+        <span class="wrong-severity-badge" id="wrong-severity-badge">ผิดเพียง 1 พยางค์</span>
+      </div>
+
+      <div class="modal-body-content wrong-body-content">
+        <p class="wrong-message-text" id="wrong-message-text">ยังไม่ถูกต้อง ลองสังเกตภาพใหม่อีกครั้งนะจ๊ะ!</p>
+        
+        <!-- กล่องคำแนะนำ / คำใบ้เจาะจง -->
+        <div class="wrong-hint-box" id="wrong-hint-box">
+          <span class="wrong-hint-icon">🎯</span>
+          <span id="wrong-hint-detail" class="wrong-hint-detail">ลองสังเกตและสลับตำแหน่งดูใหม่อีกนิดนะ</span>
+        </div>
+
+        <div class="wrong-penalty-note">
+          💡 เลือก <strong>"ลองทำต่อจากเดิม"</strong> เพื่อลุ้นคะแนนเต็ม หรือ <strong>"ข้ามข้อนี้"</strong> (ด่านนี้จะได้ 0 คะแนน)
+        </div>
+      </div>
+
+      <div class="modal-footer-actions wrong-footer-actions">
+        <button id="btn-skip-stage" class="btn btn-secondary btn-skip" title="ข้ามข้อนี้ไปด่านถัดไป">
+          <span class="btn-icon">⏭️</span> ข้ามข้อนี้ (+0 คะแนน)
+        </button>
+        <button id="btn-try-again" class="btn btn-primary btn-try-again btn-bounce" title="กลับไปแก้ไขคำตอบเดิม">
+          <span class="btn-icon">✏️</span> ลองทำต่อจากเดิม
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- กล่องแจ้งเตือนลอย (Toast Notification แทน alert) -->
+  <div id="toast-notification" class="toast-popup hidden">
+    <span class="toast-icon" id="toast-icon">⚠️</span>
+    <span class="toast-message" id="toast-message">กรุณาใส่คำตอบให้ครบก่อนตรวจนะจ๊ะ!</span>
+  </div>
+
+  <!-- Script Modules -->
+  <script src="js/data.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
